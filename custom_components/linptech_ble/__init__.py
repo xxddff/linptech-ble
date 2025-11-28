@@ -1,8 +1,8 @@
 """
-Custom integration to integrate linptech-ble with Home Assistant.
+Custom integration to integrate linptech_ble with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/ludeeus/linptech-ble
+https://github.com/ludeeus/linptech_ble
 """
 
 from __future__ import annotations

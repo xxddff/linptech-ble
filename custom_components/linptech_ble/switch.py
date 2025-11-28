@@ -1,4 +1,4 @@
-"""Switch platform for linptech-ble."""
+"""Switch platform for linptech_ble."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 ENTITY_DESCRIPTIONS = (
     SwitchEntityDescription(
-        key="linptech-ble",
+        key="linptech_ble",
         name="Integration Switch",
         icon="mdi:format-quote-close",
     ),
@@ -40,7 +40,7 @@ async def async_setup_entry(
 
 
 class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
-    """linptech-ble switch class."""
+    """linptech_ble switch class."""
 
     def __init__(
         self,

@@ -1,4 +1,4 @@
-"""Custom types for linptech-ble."""
+"""Custom types for linptech_ble."""
 
 from __future__ import annotations
 

@@ -1,0 +1,12 @@
+{
+  "domain": "linptech_ble",
+  "name": "Linptech BLE",
+  "codeowners": [
+    "@ludeeus"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ludeeus/linptech_ble",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ludeeus/linptech_ble/issues",
+  "version": "0.1.0"
+}

@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for linptech-ble."""
+"""DataUpdateCoordinator for linptech_ble."""
 
 from __future__ import annotations
 
