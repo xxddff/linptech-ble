@@ -1,5 +1,5 @@
 """
-Custom integration to integrate linptech_ble with Home Assistant.
+Custom integration to integrate Linptech BLE with Home Assistant.
 
 For more details about this integration, please refer to
 https://github.com/ludeeus/linptech_ble
@@ -7,72 +7,73 @@ https://github.com/ludeeus/linptech_ble
 
 from __future__ import annotations
 
-from datetime import timedelta
-from typing import TYPE_CHECKING
+from homeassistant.components.bluetooth import BluetoothScanningMode
+from homeassistant.components.bluetooth.passive_update_processor import (
+    PassiveBluetoothProcessorCoordinator,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS, Platform
+from homeassistant.core import HomeAssistant
 
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.loader import async_get_loaded_integration
-
-from .api import IntegrationBlueprintApiClient
-from .const import DOMAIN, LOGGER
-from .coordinator import BlueprintDataUpdateCoordinator
-from .data import IntegrationBlueprintData
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-
-    from .data import IntegrationBlueprintConfigEntry
+from .const import CONF_BINDKEY, DOMAIN, LOGGER
+from .device import LinptechBluetoothDeviceData
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
-    Platform.SWITCH,
 ]
 
 
-# https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
-) -> bool:
-    """Set up this integration using UI."""
-    coordinator = BlueprintDataUpdateCoordinator(
-        hass=hass,
-        logger=LOGGER,
-        name=DOMAIN,
-        update_interval=timedelta(hours=1),
-    )
-    entry.runtime_data = IntegrationBlueprintData(
-        client=IntegrationBlueprintApiClient(
-            username=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD],
-            session=async_get_clientsession(hass),
-        ),
-        integration=async_get_loaded_integration(hass, entry.domain),
-        coordinator=coordinator,
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Linptech BLE from a config entry."""
+    address = entry.data[CONF_ADDRESS]
+    bindkey_str = entry.data[CONF_BINDKEY]
+
+    # 将 bindkey 从十六进制字符串转换为 bytes
+    try:
+        bindkey = bytes.fromhex(bindkey_str)
+    except ValueError:
+        LOGGER.error("Invalid bindkey format for device %s", address)
+        return False
+
+    LOGGER.debug(
+        "Setting up Linptech BLE device %s with bindkey",
+        address,
     )
 
-    # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-    await coordinator.async_config_entry_first_refresh()
+    # 创建设备数据处理器
+    device_data = LinptechBluetoothDeviceData(bindkey=bindkey)
 
+    # 创建被动蓝牙协调器
+    coordinator = PassiveBluetoothProcessorCoordinator(
+        hass,
+        LOGGER,
+        address=address,
+        mode=BluetoothScanningMode.PASSIVE,
+        update_method=device_data.update,
+    )
+
+    # 保存协调器到 hass.data
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    # 转发到平台
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # 添加重新加载监听器
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
-async def async_unload_entry(
-    hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
-) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle removal of an entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
 
 
-async def async_reload_entry(
-    hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
-) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
