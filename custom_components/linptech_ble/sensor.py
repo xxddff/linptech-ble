@@ -201,7 +201,9 @@ async def async_setup_entry(
         )
     )
 
-    entry.async_on_unload(coordinator.async_register_processor(processor))
+    entry.async_on_unload(
+        coordinator.async_register_processor(processor, SensorEntityDescription)
+    )
 
 
 class LinptechBluetoothSensorEntity(PassiveBluetoothProcessorEntity, SensorEntity):
@@ -211,8 +213,3 @@ class LinptechBluetoothSensorEntity(PassiveBluetoothProcessorEntity, SensorEntit
     def native_value(self) -> int | float | None:
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.processor.coordinator.available and self.native_value is not None
