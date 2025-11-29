@@ -2,13 +2,13 @@
   "domain": "linptech_ble",
   "name": "Linptech BLE",
   "codeowners": [
-    "@ludeeus"
+    "@xxddff"
   ],
   "config_flow": true,
   "dependencies": ["bluetooth"],
-  "documentation": "https://github.com/ludeeus/linptech_ble",
+  "documentation": "https://github.com/xxddff/linptech_ble",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/ludeeus/linptech_ble/issues",
-  "requirements": ["xiaomi-ble>=1.2.0"],
+  "issue_tracker": "https://github.com/xxddff/linptech_ble/issues",
+  "requirements": [],
   "version": "0.1.0"
 }

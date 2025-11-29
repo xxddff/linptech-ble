@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothDataProcessor,
     PassiveBluetoothDataUpdate,
+    PassiveBluetoothEntityKey,
     PassiveBluetoothProcessorEntity,
 )
 from homeassistant.components.sensor import (
@@ -21,58 +22,149 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.sensor import sensor_device_info_to_entity_device_info
 
 from .const import (
     DOMAIN,
     KEY_BATTERY,
     KEY_PRESSURE_NOT_PRESENT_DURATION,
     KEY_PRESSURE_PRESENT_DURATION,
+    KEY_PRESSURE_NOT_PRESENT_TIME_SET,
+    KEY_PRESSURE_PRESENT_TIME_SET,
     KEY_RSSI,
     MODEL_PS1BB,
 )
-from .device import LinptechBluetoothDeviceData
+from .device import LinptechUpdate
 
 
 def sensor_update_to_bluetooth_data_update(
-    data: LinptechBluetoothDeviceData,
+    update: LinptechUpdate | None,
 ) -> PassiveBluetoothDataUpdate:
-    """Convert Linptech sensor data to bluetooth data update."""
-    return PassiveBluetoothDataUpdate(
-        devices={
-            data.address: sensor_device_info_to_entity_device_info(
-                {
-                    "name": f"Linptech {MODEL_PS1BB} {data.address[-5:]}",
-                    "model": MODEL_PS1BB,
-                    "manufacturer": "Linptech",
-                    "sw_version": None,
-                    "hw_version": None,
-                }
-            )
-        },
-        entity_descriptions={
-            KEY_BATTERY: SensorEntityDescription(
+    """Convert a LinptechUpdate to a bluetooth data update.
+
+    The PassiveBluetoothProcessorCoordinator passes the LinptechUpdate
+    object returned by LinptechBluetoothDeviceData.update. We map that
+    into Home Assistant's PassiveBluetoothDataUpdate structure.
+    """
+
+    if update is None:
+        return PassiveBluetoothDataUpdate(
+            devices={},
+            entity_descriptions={},
+            entity_data={},
+            entity_names={},
+        )
+
+    address = update.address
+    device_id = address.lower()
+
+    devices: dict[str, DeviceInfo] = {
+        device_id: DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=f"Linptech {MODEL_PS1BB} {address[-5:]}",
+            model=MODEL_PS1BB,
+            manufacturer="Linptech",
+        )
+    }
+
+    entity_descriptions: dict[PassiveBluetoothEntityKey, SensorEntityDescription] = {}
+    entity_data: dict[PassiveBluetoothEntityKey, int | float | None] = {}
+    entity_names: dict[PassiveBluetoothEntityKey, str] = {}
+
+    # 电量
+    if update.battery is not None:
+        entity_key = PassiveBluetoothEntityKey(KEY_BATTERY, device_id)
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
                 key=KEY_BATTERY,
                 device_class=SensorDeviceClass.BATTERY,
                 native_unit_of_measurement=PERCENTAGE,
                 state_class=SensorStateClass.MEASUREMENT,
             ),
-            KEY_PRESSURE_PRESENT_DURATION: SensorEntityDescription(
+        )
+        entity_data[entity_key] = update.battery
+        entity_names.setdefault(entity_key, "Battery")
+
+    # 压力存在时长
+    if update.pressure_present_duration is not None:
+        entity_key = PassiveBluetoothEntityKey(
+            KEY_PRESSURE_PRESENT_DURATION, device_id
+        )
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
                 key=KEY_PRESSURE_PRESENT_DURATION,
                 device_class=SensorDeviceClass.DURATION,
                 native_unit_of_measurement=UnitOfTime.SECONDS,
                 state_class=SensorStateClass.MEASUREMENT,
                 translation_key=KEY_PRESSURE_PRESENT_DURATION,
             ),
-            KEY_PRESSURE_NOT_PRESENT_DURATION: SensorEntityDescription(
+        )
+        entity_data[entity_key] = update.pressure_present_duration
+        entity_names.setdefault(entity_key, "Pressure Present Duration")
+
+    # 压力不存在时长
+    if update.pressure_not_present_duration is not None:
+        entity_key = PassiveBluetoothEntityKey(
+            KEY_PRESSURE_NOT_PRESENT_DURATION, device_id
+        )
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
                 key=KEY_PRESSURE_NOT_PRESENT_DURATION,
                 device_class=SensorDeviceClass.DURATION,
                 native_unit_of_measurement=UnitOfTime.SECONDS,
                 state_class=SensorStateClass.MEASUREMENT,
                 translation_key=KEY_PRESSURE_NOT_PRESENT_DURATION,
             ),
-            KEY_RSSI: SensorEntityDescription(
+        )
+        entity_data[entity_key] = update.pressure_not_present_duration
+        entity_names.setdefault(entity_key, "Pressure Not Present Duration")
+
+    # 压力存在时间设置（配置值）
+    if update.pressure_present_time_set is not None:
+        entity_key = PassiveBluetoothEntityKey(
+            KEY_PRESSURE_PRESENT_TIME_SET, device_id
+        )
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
+                key=KEY_PRESSURE_PRESENT_TIME_SET,
+                device_class=SensorDeviceClass.DURATION,
+                native_unit_of_measurement=UnitOfTime.SECONDS,
+                state_class=SensorStateClass.MEASUREMENT,
+                translation_key=KEY_PRESSURE_PRESENT_TIME_SET,
+            ),
+        )
+        entity_data[entity_key] = update.pressure_present_time_set
+        entity_names.setdefault(entity_key, "Pressure Present Time Set")
+
+    # 压力不存在时间设置（配置值）
+    if update.pressure_not_present_time_set is not None:
+        entity_key = PassiveBluetoothEntityKey(
+            KEY_PRESSURE_NOT_PRESENT_TIME_SET, device_id
+        )
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
+                key=KEY_PRESSURE_NOT_PRESENT_TIME_SET,
+                device_class=SensorDeviceClass.DURATION,
+                native_unit_of_measurement=UnitOfTime.SECONDS,
+                state_class=SensorStateClass.MEASUREMENT,
+                translation_key=KEY_PRESSURE_NOT_PRESENT_TIME_SET,
+            ),
+        )
+        entity_data[entity_key] = update.pressure_not_present_time_set
+        entity_names.setdefault(entity_key, "Pressure Not Present Time Set")
+
+    # RSSI 诊断传感器
+    if update.rssi is not None:
+        entity_key = PassiveBluetoothEntityKey(KEY_RSSI, device_id)
+        entity_descriptions.setdefault(
+            entity_key,
+            SensorEntityDescription(
                 key=KEY_RSSI,
                 device_class=SensorDeviceClass.SIGNAL_STRENGTH,
                 native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
@@ -80,27 +172,15 @@ def sensor_update_to_bluetooth_data_update(
                 entity_category=EntityCategory.DIAGNOSTIC,
                 entity_registry_enabled_default=False,
             ),
-        },
-        entity_data={
-            KEY_BATTERY: data.battery if hasattr(data, "battery") else None,
-            KEY_PRESSURE_PRESENT_DURATION: (
-                data.pressure_present_duration
-                if hasattr(data, "pressure_present_duration")
-                else None
-            ),
-            KEY_PRESSURE_NOT_PRESENT_DURATION: (
-                data.pressure_not_present_duration
-                if hasattr(data, "pressure_not_present_duration")
-                else None
-            ),
-            KEY_RSSI: data.rssi if hasattr(data, "rssi") else None,
-        },
-        entity_names={
-            KEY_BATTERY: "Battery",
-            KEY_PRESSURE_PRESENT_DURATION: "Pressure Present Duration",
-            KEY_PRESSURE_NOT_PRESENT_DURATION: "Pressure Not Present Duration",
-            KEY_RSSI: "Signal Strength",
-        },
+        )
+        entity_data[entity_key] = update.rssi
+        entity_names.setdefault(entity_key, "BLE RSSI")
+
+    return PassiveBluetoothDataUpdate(
+        devices=devices,
+        entity_descriptions=entity_descriptions,
+        entity_data=entity_data,
+        entity_names=entity_names,
     )
 
 

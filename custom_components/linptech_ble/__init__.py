@@ -2,7 +2,7 @@
 Custom integration to integrate Linptech BLE with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/ludeeus/linptech_ble
+https://github.com/xxddff/linptech_ble
 """
 
 from __future__ import annotations
@@ -33,18 +33,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         bindkey = bytes.fromhex(bindkey_str)
     except ValueError:
-        LOGGER.error("Invalid bindkey format for device %s", address)
+        # 与 HA core xiaomi_ble 类似，仅在配置错误时记录错误日志
+        LOGGER.error("Invalid bindkey format for Linptech BLE device %s", address)
         return False
 
-    LOGGER.debug(
-        "Setting up Linptech BLE device %s with bindkey",
-        address,
-    )
-
-    # 创建设备数据处理器
     device_data = LinptechBluetoothDeviceData(bindkey=bindkey)
 
-    # 创建被动蓝牙协调器
     coordinator = PassiveBluetoothProcessorCoordinator(
         hass,
         LOGGER,
@@ -53,12 +47,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=device_data.update,
     )
 
-    # 保存协调器到 hass.data
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # 转发到平台
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # 启动蓝牙协调器（开始监听 BLE 广播），在卸载时自动停止
+    entry.async_on_unload(coordinator.async_start())
 
     # 添加重新加载监听器
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))

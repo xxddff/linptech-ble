@@ -10,48 +10,66 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothDataProcessor,
     PassiveBluetoothDataUpdate,
+    PassiveBluetoothEntityKey,
     PassiveBluetoothProcessorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.sensor import sensor_device_info_to_entity_device_info
 
 from .const import DOMAIN, KEY_PRESSURE_STATE, MODEL_PS1BB
-from .device import LinptechBluetoothDeviceData
+from .device import LinptechUpdate
 
 
 def binary_sensor_update_to_bluetooth_data_update(
-    data: LinptechBluetoothDeviceData,
+    update: LinptechUpdate | None,
 ) -> PassiveBluetoothDataUpdate:
-    """Convert Linptech binary sensor data to bluetooth data update."""
+    """Convert a LinptechUpdate to a bluetooth data update.
+
+    We only expose a single binary sensor: pressure_state.
+    """
+
+    if update is None or update.pressure_state is None:
+        return PassiveBluetoothDataUpdate(
+            devices={},
+            entity_descriptions={},
+            entity_data={},
+            entity_names={},
+        )
+
+    address = update.address
+    device_id = address.lower()
+
+    devices: dict[str, DeviceInfo] = {
+        device_id: DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=f"Linptech {MODEL_PS1BB} {address[-5:]}",
+            model=MODEL_PS1BB,
+            manufacturer="Linptech",
+        )
+    }
+
+    entity_key = PassiveBluetoothEntityKey(KEY_PRESSURE_STATE, device_id)
+    entity_descriptions: dict[PassiveBluetoothEntityKey, BinarySensorEntityDescription] = {
+        entity_key: BinarySensorEntityDescription(
+            key=KEY_PRESSURE_STATE,
+            device_class=BinarySensorDeviceClass.OCCUPANCY,
+            translation_key=KEY_PRESSURE_STATE,
+        )
+    }
+    entity_data: dict[PassiveBluetoothEntityKey, bool | None] = {
+        entity_key: update.pressure_state
+    }
+    entity_names: dict[PassiveBluetoothEntityKey, str] = {
+        entity_key: "Pressure State"
+    }
+
     return PassiveBluetoothDataUpdate(
-        devices={
-            data.address: sensor_device_info_to_entity_device_info(
-                {
-                    "name": f"Linptech {MODEL_PS1BB} {data.address[-5:]}",
-                    "model": MODEL_PS1BB,
-                    "manufacturer": "Linptech",
-                    "sw_version": None,
-                    "hw_version": None,
-                }
-            )
-        },
-        entity_descriptions={
-            KEY_PRESSURE_STATE: BinarySensorEntityDescription(
-                key=KEY_PRESSURE_STATE,
-                device_class=BinarySensorDeviceClass.OCCUPANCY,
-                translation_key=KEY_PRESSURE_STATE,
-            ),
-        },
-        entity_data={
-            KEY_PRESSURE_STATE: (
-                data.pressure_state if hasattr(data, "pressure_state") else None
-            ),
-        },
-        entity_names={
-            KEY_PRESSURE_STATE: "Pressure State",
-        },
+        devices=devices,
+        entity_descriptions=entity_descriptions,
+        entity_data=entity_data,
+        entity_names=entity_names,
     )
 
 

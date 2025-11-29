@@ -1,5 +1,5 @@
 {
-    "name": "ludeeus/linptech_ble",
+    "name": "xxddff/linptech_ble",
     "image": "mcr.microsoft.com/devcontainers/python:3.13",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [
