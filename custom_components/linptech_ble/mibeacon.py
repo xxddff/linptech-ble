@@ -1,4 +1,5 @@
-"""MiBeacon encryption/decryption helpers for Linptech BLE.
+"""
+MiBeacon encryption/decryption helpers for Linptech BLE.
 
 This module contains a small, self-contained implementation of
 MiBeacon v4/v5 AES-CCM decryption. It is based on the publicly
@@ -23,7 +24,8 @@ def decrypt_mibeacon_v4_v5(
     frame_counter: int,
     frame_ctrl: int,
 ) -> bytes | None:
-    """Decrypt a MiBeacon v4/v5 payload using AES-CCM.
+    """
+    Decrypt a MiBeacon v4/v5 payload using AES-CCM.
 
     The algorithm follows the public description of Xiaomi's MiBeacon
     v4/v5 encryption scheme:
@@ -38,7 +40,6 @@ def decrypt_mibeacon_v4_v5(
     The function returns the decrypted object payload on success,
     or ``None`` if decryption fails.
     """
-
     # We expect ``data`` to contain:
     #   <encrypted object payload> + <3-byte trailer> + <4-byte MIC>
     # and follow the same layout as MiBeacon v4/v5 frames parsed by

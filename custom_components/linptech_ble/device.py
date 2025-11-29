@@ -1,4 +1,5 @@
-"""Linptech BLE device data parser.
+"""
+Linptech BLE device data parser.
 
 This module implements a minimal Xiaomi MiBeacon v4/v5 parser and
 AES-CCM decryption for the Linptech PS1BB device. The implementation
@@ -10,29 +11,22 @@ reimplementation (no code is copied).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+from typing import TYPE_CHECKING
 
 from .const import (
-    KEY_BATTERY,
-    KEY_PRESSURE_NOT_PRESENT_DURATION,
-    KEY_PRESSURE_PRESENT_DURATION,
-    KEY_PRESSURE_STATE,
-    KEY_RSSI,
     LOGGER,
     OBJECT_ID_BATTERY,
     OBJECT_ID_PRESSURE_NOT_PRESENT_DURATION,
-    OBJECT_ID_PRESSURE_PRESENT_DURATION,
-    OBJECT_ID_PRESSURE_STATE,
-    OBJECT_ID_PRESSURE_PRESENT_TIME_SET,
     OBJECT_ID_PRESSURE_NOT_PRESENT_TIME_SET,
+    OBJECT_ID_PRESSURE_PRESENT_DURATION,
+    OBJECT_ID_PRESSURE_PRESENT_TIME_SET,
+    OBJECT_ID_PRESSURE_STATE,
     SUPPORTED_PRODUCT_IDS,
 )
 from .mibeacon import decrypt_mibeacon_v4_v5
 
+if TYPE_CHECKING:
+    from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 
 MI_SERVICE_UUID = "0000fe95-0000-1000-8000-00805f9b34fb"
 
@@ -65,15 +59,15 @@ class LinptechBluetoothDeviceData:
         self._bindkey = bindkey
 
     def update(self, service_info: BluetoothServiceInfoBleak) -> LinptechUpdate | None:
-        """Update from BLE advertisement data.
+        """
+        Update from BLE advertisement data.
 
         This is called by the PassiveBluetoothProcessorCoordinator whenever
         a new BLE advertisement is received for the configured address.
         It is responsible for parsing the MiBeacon v4/v5 frame, optionally
         decrypting the payload, and extracting the Linptech specific objects.
         """
-
-        # Service Data（服务数据 - 小米 BLE 设备通常在这里发送数据）
+        # Service Data(服务数据 - 小米 BLE 设备通常在这里发送数据)
         service_data = getattr(service_info, "service_data", {}) or {}
 
         # 只处理小米 MiBeacon 服务 UUID 的数据
@@ -84,7 +78,7 @@ class LinptechBluetoothDeviceData:
         frame_ctrl = int.from_bytes(raw[0:2], "little")
         product_id = int.from_bytes(raw[2:4], "little")
 
-        # 仅处理当前支持的 Linptech 设备（目前只有 PS1BB）。
+        # 仅处理当前支持的 Linptech 设备(目前只有 PS1BB)。
         if product_id not in SUPPORTED_PRODUCT_IDS:
             LOGGER.debug(
                 "Ignoring non-Linptech device with product ID 0x%04X (address=%s)",
@@ -102,7 +96,7 @@ class LinptechBluetoothDeviceData:
         has_object = bool(frame_ctrl & FRAMECTRL_OBJECT_PRESENT)
 
         # 先从 payload 中剥离可选的 MAC 和 capability 字段，
-        # 剩余部分才是需要解密（或直接解析）的对象区。
+        # 剩余部分才是需要解密(或直接解析)的对象区。
         header_offset = 0
         if has_mac and len(payload) >= header_offset + 6:
             inner_mac = payload[header_offset : header_offset + 6]
@@ -158,7 +152,8 @@ class LinptechBluetoothDeviceData:
         return update
 
     def _parse_objects(self, payload: bytes, update: LinptechUpdate) -> None:
-        """Parse MiBeacon object list into the LinptechUpdate.
+        """
+        Parse MiBeacon object list into the LinptechUpdate.
 
         Objects are encoded as a sequence of TLV structures:
 
@@ -166,7 +161,6 @@ class LinptechBluetoothDeviceData:
         * 1 byte: data length (N)
         * N bytes: object data
         """
-
         offset = 0
         length = len(payload)
         while offset + 3 <= length:
@@ -241,4 +235,3 @@ class LinptechBluetoothDeviceData:
         if len(xobj) >= 1:
             battery = xobj[0]
             update.battery = battery
-

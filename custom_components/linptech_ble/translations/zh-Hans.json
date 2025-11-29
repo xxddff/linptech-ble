@@ -6,19 +6,19 @@
         "description": "输入您的 Linptech PS1BB 设备的 MAC 地址和 bindkey。",
         "data": {
           "address": "MAC 地址",
-          "bindkey": "Bindkey（32 位十六进制字符）"
+          "bindkey": "Bindkey(32 位十六进制字符)"
         }
       },
       "bluetooth_confirm": {
         "title": "发现 Linptech BLE 设备",
         "description": "在 {address} 发现了一个 Linptech 设备。请输入 bindkey 以解密其数据。",
         "data": {
-          "bindkey": "Bindkey（32 位十六进制字符）"
+          "bindkey": "Bindkey(32 位十六进制字符)"
         }
       }
     },
     "error": {
-      "invalid_bindkey": "无效的 bindkey 格式（必须是 32 位十六进制字符）",
+      "invalid_bindkey": "无效的 bindkey 格式(必须是 32 位十六进制字符)",
       "invalid_mac_address": "无效的 MAC 地址格式",
       "cannot_connect": "使用提供的 bindkey 解密设备数据失败"
     },

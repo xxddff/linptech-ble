@@ -9,16 +9,16 @@ DOMAIN = "linptech_ble"
 # 配置键
 CONF_BINDKEY = "bindkey"
 
-# 数据对象 ID（来自 ble_monitor issue #1367 等公开资料）
+# 数据对象 ID(来自 ble_monitor issue #1367 等公开资料)
 OBJECT_ID_PRESSURE_STATE = 0x483C
 OBJECT_ID_PRESSURE_PRESENT_DURATION = 0x483D
 OBJECT_ID_PRESSURE_NOT_PRESENT_DURATION = 0x483E
-# 时间设置（配置值）
+# 时间设置(配置值)
 OBJECT_ID_PRESSURE_PRESENT_TIME_SET = 0x483F
 OBJECT_ID_PRESSURE_NOT_PRESENT_TIME_SET = 0x4840
 OBJECT_ID_BATTERY = 0x4C03
 
-# 产品 ID（MiBeacon product id）
+# 产品 ID(MiBeacon product id)
 PRODUCT_ID_PS1BB = 0x3F4C
 # 当前仅支持 PS1BB，如需扩展其他 Linptech 设备，
 # 只需在这里追加新的 product_id 即可。

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -13,23 +15,26 @@ from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothEntityKey,
     PassiveBluetoothProcessorEntity,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, KEY_PRESSURE_STATE, MODEL_PS1BB
-from .device import LinptechUpdate
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+    from .device import LinptechUpdate
 
 
 def binary_sensor_update_to_bluetooth_data_update(
     update: LinptechUpdate | None,
 ) -> PassiveBluetoothDataUpdate:
-    """Convert a LinptechUpdate to a bluetooth data update.
+    """
+    Convert a LinptechUpdate to a bluetooth data update.
 
     We only expose a single binary sensor: pressure_state.
     """
-
     if update is None or update.pressure_state is None:
         return PassiveBluetoothDataUpdate(
             devices={},

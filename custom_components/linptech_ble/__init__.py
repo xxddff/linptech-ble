@@ -7,16 +7,20 @@ https://github.com/xxddff/linptech_ble
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from homeassistant.components.bluetooth import BluetoothScanningMode
 from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothProcessorCoordinator,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, Platform
-from homeassistant.core import HomeAssistant
 
 from .const import CONF_BINDKEY, DOMAIN, LOGGER
 from .device import LinptechBluetoothDeviceData
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
@@ -52,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # 启动蓝牙协调器（开始监听 BLE 广播），在卸载时自动停止
+    # 启动蓝牙协调器(开始监听 BLE 广播)，在卸载时自动停止
     entry.async_on_unload(coordinator.async_start())
 
     # 添加重新加载监听器
