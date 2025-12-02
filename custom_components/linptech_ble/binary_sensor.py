@@ -112,3 +112,17 @@ class LinptechBluetoothBinarySensorEntity(
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
         return self.processor.entity_data.get(self.entity_key)
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available.
+
+        对于像 PS1BB 这样的 sleepy 设备，蓝牙层的“失联超时”会导致
+        周期性地把设备标记为不可用，从而让实体所有属性一起变为
+        unavailable。这里在协调器声明 sleepy_device 时，始终认为
+        实体可用；否则使用默认逻辑。
+        """
+        coordinator = self.processor.coordinator
+        if getattr(coordinator, "sleepy_device", False):
+            return True
+        return super().available

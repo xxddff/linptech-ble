@@ -213,3 +213,17 @@ class LinptechBluetoothSensorEntity(PassiveBluetoothProcessorEntity, SensorEntit
     def native_value(self) -> int | float | None:
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available.
+
+        PS1BB 是 sleepy 设备，蓝牙管理器会因为长时间未收到广播
+        而周期性地将其标记为不可用。为避免上下线抖动，
+        当协调器被标记为 sleepy_device 时，我们始终认为实体可用，
+        否则回退到被动蓝牙实体的默认可用性逻辑。
+        """
+        coordinator = self.processor.coordinator
+        if getattr(coordinator, "sleepy_device", False):
+            return True
+        return super().available

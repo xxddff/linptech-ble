@@ -51,6 +51,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=device_data.update,
     )
 
+    # PS1BB 是典型的电池供电、长时间不广播的 sleepy 设备，
+    # 避免蓝牙可用性回退逻辑频繁将其标记为不可用。
+    coordinator.sleepy_device = True
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
